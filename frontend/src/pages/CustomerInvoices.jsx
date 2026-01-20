@@ -22,6 +22,9 @@ import {
   IconButton,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 import { customerInvoicesAPI, customersAPI, salesDispatchAPI } from '../services/api';
 
 const STATUSES = ['Draft', 'Issued', 'Paid', 'Overdue'];
@@ -142,6 +145,95 @@ export default function CustomerInvoices() {
     return new Date(date).toLocaleDateString();
   };
 
+  const downloadPDF = (invoice) => {
+    const doc = new jsPDF();
+    
+    // Company Header
+    doc.setFontSize(20);
+    doc.text('FactoryOS', 20, 20);
+    doc.setFontSize(10);
+    doc.text('Invoice', 20, 28);
+    
+    // Invoice Details
+    doc.setFontSize(9);
+    let yPos = 40;
+    
+    doc.text(`Invoice Number: ${invoice.invoiceNumber}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Invoice Date: ${formatDate(invoice.invoiceDate)}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Status: ${invoice.status}`, 20, yPos);
+    yPos += 10;
+    
+    // Customer Details
+    doc.setFontSize(10);
+    doc.text('Bill To:', 20, yPos);
+    yPos += 5;
+    doc.setFontSize(9);
+    doc.text(`Customer: ${invoice.customerID?.name || 'N/A'}`, 20, yPos);
+    yPos += 5;
+    if (invoice.customerID?.email) {
+      doc.text(`Email: ${invoice.customerID.email}`, 20, yPos);
+      yPos += 5;
+    }
+    if (invoice.customerID?.phone) {
+      doc.text(`Phone: ${invoice.customerID.phone}`, 20, yPos);
+      yPos += 5;
+    }
+    if (invoice.customerID?.address) {
+      doc.text(`Address: ${invoice.customerID.address}`, 20, yPos);
+      yPos += 5;
+    }
+    yPos += 5;
+    
+    // Items Table
+    const tableData = invoice.items?.map((item) => [
+      item.SKU || 'N/A',
+      item.quantity || 0,
+      `$${(item.unitPrice || 0).toFixed(2)}`,
+      `$${((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2)}`,
+    ]) || [];
+    
+    doc.autoTable({
+      startY: yPos,
+      head: [['Item/SKU', 'Quantity', 'Unit Price', 'Total']],
+      body: tableData,
+      theme: 'grid',
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontStyle: 'bold',
+      },
+    });
+    
+    // Calculate total
+    const totalAmount = invoice.items?.reduce(
+      (sum, item) => sum + ((item.quantity || 0) * (item.unitPrice || 0)),
+      0
+    ) || 0;
+    
+    yPos = doc.lastAutoTable.finalY + 10;
+    
+    // Total Amount
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.text(`Total Amount: $${totalAmount.toFixed(2)}`, 150, yPos);
+    
+    // Footer
+    yPos = doc.internal.pageSize.height - 20;
+    doc.setFontSize(8);
+    doc.setFont(undefined, 'normal');
+    doc.text('Thank you for your business!', 20, yPos);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, yPos + 5);
+    
+    // Download PDF
+    doc.save(`Invoice-${invoice.invoiceNumber}.pdf`);
+  };
+
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
@@ -209,19 +301,29 @@ export default function CustomerInvoices() {
                       </TableCell>
                       <TableCell>${totalAmount.toFixed(2)}</TableCell>
                       <TableCell>
-                        <TextField
-                          select
-                          size="small"
-                          value={invoice.status}
-                          onChange={(e) => handleStatusChange(invoice._id, e.target.value)}
-                          sx={{ minWidth: 150 }}
-                        >
-                          {STATUSES.map((status) => (
-                            <MenuItem key={status} value={status}>
-                              {status}
-                            </MenuItem>
-                          ))}
-                        </TextField>
+                        <Box display="flex" gap={1}>
+                          <TextField
+                            select
+                            size="small"
+                            value={invoice.status}
+                            onChange={(e) => handleStatusChange(invoice._id, e.target.value)}
+                            sx={{ minWidth: 120 }}
+                          >
+                            {STATUSES.map((status) => (
+                              <MenuItem key={status} value={status}>
+                                {status}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                          <IconButton
+                            title="Download PDF"
+                            onClick={() => downloadPDF(invoice)}
+                            size="small"
+                            color="primary"
+                          >
+                            <FileDownloadIcon />
+                          </IconButton>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   );

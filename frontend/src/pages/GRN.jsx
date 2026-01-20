@@ -115,21 +115,39 @@ export default function GRN() {
 
   const handleSubmit = async () => {
     try {
+      // Validate required fields
+      if (!formData.poID) {
+        setError('Please select a Purchase Order');
+        return;
+      }
+
+      if (!formData.QC) {
+        setError('Please select QC Status');
+        return;
+      }
+
+      if (formData.items.some((item) => !item.itemName || !item.quantityReceived)) {
+        setError('All items must have a name and quantity');
+        return;
+      }
+
       const data = {
-        ...formData,
+        poID: formData.poID,
         items: formData.items.map((item) => ({
           itemName: item.itemName,
           quantityReceived: Number(item.quantityReceived),
-          lotNumber: item.lotNumber || undefined,
-          expiryDate: item.expiryDate || undefined,
+          ...(item.lotNumber && { lotNumber: item.lotNumber }),
+          ...(item.expiryDate && { expiryDate: item.expiryDate }),
         })),
-        QC: formData.QC || 'Check',
+        QC: formData.QC,
       };
+      
       await grnAPI.create(data);
+      setError(null);
       handleClose();
       fetchData();
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Failed to create GRN');
     }
   };
 

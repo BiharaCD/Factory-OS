@@ -103,13 +103,13 @@ export default function Inventory() {
                 <TableCell><strong>Item Code</strong></TableCell>
                 <TableCell><strong>Item Name</strong></TableCell>
                 {/*<TableCell><strong>SKU</strong></TableCell>*/}
-                <TableCell><strong>Category</strong></TableCell>
-                <TableCell><strong>Container Type</strong></TableCell>
+                {/*<TableCell><strong>Category</strong></TableCell>*/}
+                {/*<TableCell><strong>Container Type</strong></TableCell>*/}
                 <TableCell><strong>Quantity</strong></TableCell>
                 <TableCell><strong>Lot Number</strong></TableCell>
-                <TableCell><strong>Batch ID</strong></TableCell>
+                {/*<TableCell><strong>Batch ID</strong></TableCell>*/}
                 <TableCell><strong>Expiry Date</strong></TableCell>
-                <TableCell><strong>Alcohol Flag</strong></TableCell>
+                {/*<TableCell><strong>Alcohol Flag</strong></TableCell>*/}
                 <TableCell><strong>QC Status</strong></TableCell>
               </TableRow>
             </TableHead>
@@ -126,19 +126,19 @@ export default function Inventory() {
                     <TableCell>{item.itemCode}</TableCell>
                     <TableCell>{item.itemName}</TableCell>
                     {/*<TableCell>{item.SKU}</TableCell> */}
-                    <TableCell>{item.category}</TableCell>
-                    <TableCell>{item.containerType || 'N/A'}</TableCell>
+                    {/*<TableCell>{item.category}</TableCell>*/}
+                    {/*<TableCell>{item.containerType || 'N/A'}</TableCell>*/}
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell>{item.lotNumber || 'N/A'}</TableCell>
-                    <TableCell>{item.batchID || 'N/A'}</TableCell>
+                    {/*<TableCell>{item.batchID || 'N/A'}</TableCell>*/}
                     <TableCell>{formatDate(item.expiryDate)}</TableCell>
-                    <TableCell>
+                    {/*<TableCell>
                       {item.alcoholFlag ? (
                         <Chip label="Yes" color="warning" size="small" />
                       ) : (
                         <Chip label="No" size="small" />
                       )}
-                    </TableCell>
+                    </TableCell>*/}
                     <TableCell>
                       <Chip
                         label={item.QCstatus || 'Pass'}

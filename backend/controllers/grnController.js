@@ -5,6 +5,29 @@ import Inventory from "../models/inventory.js";
 export const createGRN = async (req, res) => {
   try {
     const { poID, items, QC } = req.body;
+
+    // Validate required fields
+    if (!poID) {
+      return res.status(400).json({ message: "Purchase Order ID is required" });
+    }
+
+    if (!items || items.length === 0) {
+      return res.status(400).json({ message: "At least one item is required" });
+    }
+
+    // Validate each item
+    for (const item of items) {
+      if (!item.itemName) {
+        return res.status(400).json({ message: "Item name is required for all items" });
+      }
+      if (item.quantityReceived === undefined || item.quantityReceived === null || item.quantityReceived === '') {
+        return res.status(400).json({ message: "Quantity received is required for all items" });
+      }
+      if (isNaN(item.quantityReceived) || Number(item.quantityReceived) <= 0) {
+        return res.status(400).json({ message: "Quantity must be a positive number" });
+      }
+    }
+
     const grn = new GRN({ poID, items, QC });
     
     await grn.save();
@@ -13,7 +36,7 @@ export const createGRN = async (req, res) => {
     for (const item of items) {
       const inv = await Inventory.findOne({ itemName: item.itemName });
       if (inv) {
-        inv.quantity += item.quantityReceived;
+        inv.quantity += Number(item.quantityReceived);
         if (item.lotNumber) inv.lotNumber = item.lotNumber;
         if (item.expiryDate) inv.expiryDate = item.expiryDate;
         // Update QC status from GRN
@@ -28,7 +51,7 @@ export const createGRN = async (req, res) => {
           itemName: item.itemName,
           SKU: `SKU-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           category: 'Raw Material',
-          quantity: item.quantityReceived,
+          quantity: Number(item.quantityReceived),
           lotNumber: item.lotNumber,
           expiryDate: item.expiryDate,
           QCstatus: QC || 'Pass',

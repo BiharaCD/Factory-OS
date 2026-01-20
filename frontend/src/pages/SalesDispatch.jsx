@@ -20,15 +20,17 @@ import {
   Chip,
   MenuItem,
   IconButton,
+  FormHelperText,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { salesDispatchAPI, customersAPI } from '../services/api';
+import { salesDispatchAPI, customersAPI, inventoryAPI } from '../services/api';
 
 const STATUSES = ['Draft', 'Dispatched', 'Delivered'];
 
 export default function SalesDispatch() {
   const [dispatches, setDispatches] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [open, setOpen] = useState(false);
@@ -47,12 +49,14 @@ export default function SalesDispatch() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [dispatchesRes, customersRes] = await Promise.all([
+      const [dispatchesRes, customersRes, inventoryRes] = await Promise.all([
         salesDispatchAPI.getAll(),
         customersAPI.getAll(),
+        inventoryAPI.getAll(),
       ]);
       setDispatches(dispatchesRes.data);
       setCustomers(customersRes.data);
+      setInventory(inventoryRes.data);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -85,7 +89,18 @@ export default function SalesDispatch() {
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...formData.items];
-    newItems[index][field] = value;
+    
+    if (field === 'itemName') {
+      // When item is selected, auto-populate unitPrice from inventory
+      const selectedItem = inventory.find(inv => inv.itemName === value);
+      newItems[index][field] = value;
+      if (selectedItem) {
+        newItems[index].unitPrice = selectedItem.unitPrice || 0;
+      }
+    } else {
+      newItems[index][field] = value;
+    }
+    
     setFormData({ ...formData, items: newItems });
   };
 
@@ -96,6 +111,21 @@ export default function SalesDispatch() {
 
   const handleSubmit = async () => {
     try {
+      // Validate all items have required fields
+      for (const item of formData.items) {
+        if (!item.itemName || !item.quantity || !item.unitPrice) {
+          setError('All items must have a name, quantity, and unit price');
+          return;
+        }
+
+        // Validate quantity doesn't exceed available stock
+        const availableQuantity = getAvailableQuantity(item.itemName);
+        if (Number(item.quantity) > availableQuantity) {
+          setError(`${item.itemName} only has ${availableQuantity} units available`);
+          return;
+        }
+      }
+
       const data = {
         customerID: formData.customerID,
         invoiceNumber: formData.invoiceNumber,
@@ -108,6 +138,7 @@ export default function SalesDispatch() {
         })),
       };
       await salesDispatchAPI.create(data);
+      setError(null);
       handleClose();
       fetchData();
     } catch (err) {
@@ -131,6 +162,11 @@ export default function SalesDispatch() {
       Delivered: 'success',
     };
     return colors[status] || 'default';
+  };
+
+  const getAvailableQuantity = (itemName) => {
+    const item = inventory.find(inv => inv.itemName === itemName);
+    return item?.quantity || 0;
   };
 
   const formatDate = (date) => {
@@ -307,40 +343,65 @@ export default function SalesDispatch() {
                   Add Item
                 </Button>
               </Box>
-              {formData.items.map((item, index) => (
-                <Box key={index} display="flex" gap={2} mb={2} flexWrap="wrap">
-                  <TextField
-                    label="Item Name"
-                    value={item.itemName}
-                    onChange={(e) => handleItemChange(index, 'itemName', e.target.value)}
-                    size="small"
-                    required
-                    sx={{ flex: 1, minWidth: 150 }}
-                  />
-                  <TextField
-                    label="Quantity"
-                    type="number"
-                    value={item.quantity}
-                    onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                    size="small"
-                    required
-                  />
-                  <TextField
-                    label="Unit Price"
-                    type="number"
-                    value={item.unitPrice}
-                    onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
-                    size="small"
-                    required
-                  />
-                  <IconButton
-                    onClick={() => handleRemoveItem(index)}
-                    disabled={formData.items.length === 1}
-                  >
-                    <AddIcon sx={{ transform: 'rotate(45deg)' }} />
-                  </IconButton>
-                </Box>
-              ))}
+              {formData.items.map((item, index) => {
+                const availableQuantity = getAvailableQuantity(item.itemName);
+                const quantityError = item.quantity && Number(item.quantity) > availableQuantity;
+                
+                return (
+                  <Box key={index} display="flex" gap={2} mb={2} flexWrap="wrap" alignItems="flex-start">
+                    <Box sx={{ flex: 1, minWidth: 200 }}>
+                      <TextField
+                        fullWidth
+                        select
+                        label="Item Name"
+                        value={item.itemName}
+                        onChange={(e) => handleItemChange(index, 'itemName', e.target.value)}
+                        size="small"
+                        required
+                      >
+                        {inventory.map((inv) => (
+                          <MenuItem key={inv._id} value={inv.itemName}>
+                            {inv.itemName} (Available: {inv.quantity})
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                      {item.itemName && (
+                        <FormHelperText>
+                          Available: {availableQuantity} units
+                        </FormHelperText>
+                      )}
+                    </Box>
+                    <Box>
+                      <TextField
+                        label="Quantity"
+                        type="number"
+                        value={item.quantity}
+                        onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                        size="small"
+                        required
+                        error={quantityError}
+                        helperText={quantityError ? `Max: ${availableQuantity}` : ''}
+                        inputProps={{ min: 1 }}
+                      />
+                    </Box>
+                    <TextField
+                      label="Unit Price"
+                      type="number"
+                      value={item.unitPrice}
+                      onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
+                      size="small"
+                      required
+                      inputProps={{ min: 0, step: 0.01 }}
+                    />
+                    <IconButton
+                      onClick={() => handleRemoveItem(index)}
+                      disabled={formData.items.length === 1}
+                    >
+                      <AddIcon sx={{ transform: 'rotate(45deg)' }} />
+                    </IconButton>
+                  </Box>
+                );
+              })}
             </Box>
           </Box>
         </DialogContent>
