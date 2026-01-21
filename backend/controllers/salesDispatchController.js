@@ -57,35 +57,36 @@ export const createDispatch = async (req, res) => {
       status: status || "Draft",
     });
 
-    await dispatch.save();
-
     /* =======================
        INVENTORY DEDUCTION
-       ONLY WHEN DISPATCHED
+       ON DISPATCH CREATION
     ======================= */
-    if (dispatch.status === "Dispatched") {
-      for (const item of mappedItems) {
-        const inventoryItem = await Inventory.findOne({
-          itemName: item.itemName,
+    for (const item of mappedItems) {
+      const inventoryItem = await Inventory.findOne({
+        itemName: item.itemName,
+      });
+
+      if (!inventoryItem) {
+        // Delete the dispatch if inventory item doesn't exist
+        await SalesDispatch.findByIdAndDelete(dispatch._id);
+        return res.status(400).json({
+          message: `Inventory item not found: ${item.itemName}`,
         });
-
-        if (!inventoryItem) {
-          return res.status(400).json({
-            message: `Inventory item not found: ${item.itemName}`,
-          });
-        }
-
-        if (inventoryItem.quantity < item.quantity) {
-          return res.status(400).json({
-            message: `Insufficient stock for ${item.itemName}. Available: ${inventoryItem.quantity}`,
-          });
-        }
-
-        inventoryItem.quantity -= item.quantity;
-        await inventoryItem.save();
       }
+
+      if (inventoryItem.quantity < item.quantity) {
+        // Delete the dispatch if insufficient stock
+        await SalesDispatch.findByIdAndDelete(dispatch._id);
+        return res.status(400).json({
+          message: `Insufficient stock for ${item.itemName}. Available: ${inventoryItem.quantity}`,
+        });
+      }
+
+      inventoryItem.quantity -= item.quantity;
+      await inventoryItem.save();
     }
 
+    await dispatch.save();
     res.status(201).json(dispatch);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -109,8 +110,7 @@ export const getDispatches = async (req, res) => {
 
 /**
  * UPDATE DISPATCH STATUS
- * - Draft → Dispatched = deduct inventory
- * - Delivered = no inventory change
+ * - No inventory changes (already deducted on creation)
  */
 export const updateDispatchStatus = async (req, res) => {
   try {
@@ -119,33 +119,6 @@ export const updateDispatchStatus = async (req, res) => {
     const dispatch = await SalesDispatch.findById(req.params.id);
     if (!dispatch) {
       return res.status(404).json({ message: "Dispatch not found" });
-    }
-
-    /* =======================
-       DEDUCT STOCK ONLY ON
-       Draft → Dispatched
-    ======================= */
-    if (dispatch.status !== "Dispatched" && status === "Dispatched") {
-      for (const item of dispatch.items) {
-        const inventoryItem = await Inventory.findOne({
-          itemName: item.itemName,
-        });
-
-        if (!inventoryItem) {
-          return res.status(400).json({
-            message: `Inventory item not found: ${item.itemName}`,
-          });
-        }
-
-        if (inventoryItem.quantity < item.quantity) {
-          return res.status(400).json({
-            message: `Insufficient stock for ${item.itemName}`,
-          });
-        }
-
-        inventoryItem.quantity -= item.quantity;
-        await inventoryItem.save();
-      }
     }
 
     dispatch.status = status;
