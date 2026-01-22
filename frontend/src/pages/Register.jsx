@@ -51,9 +51,13 @@ export default function Register() {
 
     if (result.success) {
       setSuccess(true);
+      setName('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
       setTimeout(() => {
         navigate('/login');
-      }, 2000);
+      }, 3000);
     } else {
       setError(result.message);
     }
@@ -86,7 +90,7 @@ export default function Register() {
             )}
             {success && (
               <Alert severity="success" sx={{ mb: 2 }}>
-                Registration successful! Redirecting to login...
+                Registration successful! Your account is pending approval from an existing user. You will be able to login once approved. Redirecting to login page...
               </Alert>
             )}
             <TextField

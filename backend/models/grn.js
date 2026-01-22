@@ -6,6 +6,7 @@ const grnSchema = new mongoose.Schema({
   items: [
     {
       itemName: { type: String, required: true },
+      category: { type: String, required: true },
       quantityReceived: { type: Number, required: true }, // <--- added
       lotNumber: { type: String },
       expiryDate: { type: Date },

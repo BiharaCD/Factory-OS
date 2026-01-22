@@ -20,6 +20,9 @@ export const createGRN = async (req, res) => {
       if (!item.itemName) {
         return res.status(400).json({ message: "Item name is required for all items" });
       }
+      if (!item.category) {
+        return res.status(400).json({ message: "Category is required for all items" });
+      }
       if (item.quantityReceived === undefined || item.quantityReceived === null || item.quantityReceived === '') {
         return res.status(400).json({ message: "Quantity received is required for all items" });
       }
@@ -32,9 +35,9 @@ export const createGRN = async (req, res) => {
     
     await grn.save();
 
-    // Update inventory - match by itemName
+    // Update inventory - match by itemName AND category
     for (const item of items) {
-      const inv = await Inventory.findOne({ itemName: item.itemName });
+      const inv = await Inventory.findOne({ itemName: item.itemName, category: item.category });
       if (inv) {
         inv.quantity += Number(item.quantityReceived);
         if (item.lotNumber) inv.lotNumber = item.lotNumber;
@@ -50,7 +53,7 @@ export const createGRN = async (req, res) => {
           itemCode: `ITEM-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           itemName: item.itemName,
           SKU: `SKU-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          category: 'Raw Material',
+          category: item.category,
           quantity: Number(item.quantityReceived),
           lotNumber: item.lotNumber,
           expiryDate: item.expiryDate,

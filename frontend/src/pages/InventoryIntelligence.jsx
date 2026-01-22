@@ -182,8 +182,7 @@ export default function InventoryIntelligence() {
 
     const safetyStockBreaches = inventory
       .map((item) => {
-        const category = item.category || 'Other';
-        const threshold = getSafetyStockThreshold(item, categoryAvgs[category] || 0);
+        const threshold = item.threshold || 10; // Use custom threshold from inventory
         const daysLeft = calculateDaysOfStockLeft(item, inventory);
         return {
           ...item,

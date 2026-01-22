@@ -18,6 +18,7 @@ import SupplierBills from './pages/SupplierBills';
 import ProductionBatches from './pages/ProductionBatches';
 import SalesDispatch from './pages/SalesDispatch';
 import CustomerInvoices from './pages/CustomerInvoices';
+import UserApproval from './pages/UserApproval';
 
 const theme = createTheme({
   palette: {
@@ -59,6 +60,7 @@ function App() {
                       <Route path="/production-batches" element={<ProductionBatches />} />
                       <Route path="/sales-dispatch" element={<SalesDispatch />} />
                       <Route path="/customer-invoices" element={<CustomerInvoices />} />
+                      <Route path="/user-approval" element={<UserApproval />} />
                       <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
                   </Layout>

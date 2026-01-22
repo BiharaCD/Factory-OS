@@ -30,6 +30,7 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
+import SecurityIcon from '@mui/icons-material/Security';
 import { useAuth } from '../contexts/AuthContext';
 
 const drawerWidth = 240;
@@ -46,6 +47,7 @@ const menuItems = [
   { text: 'Production Batches', icon: <FactoryIcon />, path: '/production-batches' },
   { text: 'Sales Dispatch', icon: <LocalShippingIcon />, path: '/sales-dispatch' },
   { text: 'Customer Invoices', icon: <AssignmentIcon />, path: '/customer-invoices' },
+  { text: 'User Access', icon: <SecurityIcon />, path: '/user-approval' },
 ];
 
 export default function Layout({ children }) {

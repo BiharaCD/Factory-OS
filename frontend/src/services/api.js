@@ -44,12 +44,17 @@ export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
   getProfile: () => api.get('/auth/profile'),
+  getPendingUsers: () => api.get('/auth/pending-users'),
+  getApprovedUsers: () => api.get('/auth/approved-users'),
+  approveUser: (userId) => api.patch(`/auth/${userId}/approve`),
+  rejectUser: (userId) => api.patch(`/auth/${userId}/reject`),
 };
 
 // Inventory
 export const inventoryAPI = {
   getAll: () => api.get('/inventory'),
   getById: (id) => api.get(`/inventory/${id}`),
+  updateThreshold: (id, data) => api.patch(`/inventory/${id}/threshold`, data),
 };
 
 // Suppliers

@@ -34,7 +34,7 @@ export default function GRN() {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     poID: '',
-    items: [{ itemName: '', quantityReceived: '', lotNumber: '', expiryDate: '' }],
+    items: [{ itemName: '', category: '', quantityReceived: '', lotNumber: '', expiryDate: '' }],
     QC: 'Check',
   });
 
@@ -62,7 +62,7 @@ export default function GRN() {
   const handleOpen = () => {
     setFormData({
       poID: '',
-      items: [{ itemName: '', quantityReceived: '', lotNumber: '', expiryDate: '' }],
+      items: [{ itemName: '', category: '', quantityReceived: '', lotNumber: '', expiryDate: '' }],
       QC: 'Check',
     });
     setOpen(true);
@@ -98,7 +98,7 @@ export default function GRN() {
   const handleAddItem = () => {
     setFormData({
       ...formData,
-      items: [...formData.items, { itemName: '', quantityReceived: '', lotNumber: '', expiryDate: '' }],
+      items: [...formData.items, { itemName: '', category: '', quantityReceived: '', lotNumber: '', expiryDate: '' }],
     });
   };
 
@@ -126,8 +126,8 @@ export default function GRN() {
         return;
       }
 
-      if (formData.items.some((item) => !item.itemName || !item.quantityReceived)) {
-        setError('All items must have a name and quantity');
+      if (formData.items.some((item) => !item.itemName || !item.category || !item.quantityReceived)) {
+        setError('All items must have a name, category, and quantity');
         return;
       }
 
@@ -135,6 +135,7 @@ export default function GRN() {
         poID: formData.poID,
         items: formData.items.map((item) => ({
           itemName: item.itemName,
+          category: item.category,
           quantityReceived: Number(item.quantityReceived),
           ...(item.lotNumber && { lotNumber: item.lotNumber }),
           ...(item.expiryDate && { expiryDate: item.expiryDate }),
@@ -272,6 +273,14 @@ export default function GRN() {
                     sx={{ flex: 1, minWidth: 150 }}
                   />
                   <TextField
+                    label="Category"
+                    value={item.category}
+                    onChange={(e) => handleItemChange(index, 'category', e.target.value)}
+                    size="small"
+                    required
+                    sx={{ minWidth: 120 }}
+                  />
+                  <TextField
                     label="Quantity Received"
                     type="number"
                     value={item.quantityReceived}
@@ -324,7 +333,7 @@ export default function GRN() {
           <Button
             onClick={handleSubmit}
             variant="contained"
-            disabled={!formData.poID || !formData.QC || formData.items.some((item) => !item.itemName || !item.quantityReceived)}
+            disabled={!formData.poID || !formData.QC || formData.items.some((item) => !item.itemName || !item.category || !item.quantityReceived)}
           >
             Create GRN
           </Button>

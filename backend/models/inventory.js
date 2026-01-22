@@ -10,6 +10,7 @@ const inventorySchema = new mongoose.Schema({
   lotNumber: { type: String },
   batchID: { type: String },
   quantity: { type: Number, default: 0 },
+  threshold: { type: Number, default: 10 },
   expiryDate: { type: Date },
   alcoholFlag: { type: Boolean, default: false },
   QCstatus: { type: String, enum: ["Pass", "Fail"], default: "Pass" },
